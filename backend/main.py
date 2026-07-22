@@ -1,5 +1,6 @@
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, UploadFile, File
+from services.demucs_services import separate_audio
 import shutil
 import os
 
@@ -23,14 +24,17 @@ def root():
     return {"message": "Backend is running 🚀"}
 
 
-@app.post("/upload") #RUN the fucntion below if in this URL 
+@app.post("/upload")
 def upload_song(file: UploadFile = File(...)):
     file_path = os.path.join(UPLOAD_FOLDER, file.filename)
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
+    output_folder = separate_audio(file_path)
+
     return {
-        "message": "Upload successful!",
+        "message": "Upload and separation successful!",
         "filename": file.filename,
+        "output": output_folder,
     }
