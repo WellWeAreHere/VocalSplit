@@ -5,6 +5,7 @@ import axios from "axios";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
+  const [status, setStatus] = useState("");
 
   const uploadFile = async () => {
     if (!file) {
@@ -16,15 +17,32 @@ export default function Home() {
     formData.append("file", file);
 
     try {
+      setStatus("Uploading...");
+
       const response = await axios.post(
         "http://127.0.0.1:8000/upload",
         formData
       );
 
-      alert(response.data.message);
+      const jobId = response.data.job_id;
+
+      setStatus("Processing...");
+
+      while (true) {
+        const statusResponse = await axios.get(
+          `http://127.0.0.1:8000/status/${jobId}`
+        );
+
+        if (statusResponse.data.status === "completed") {
+          setStatus("✅ Separation Complete!");
+          break;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
     } catch (error) {
       console.error(error);
-      alert("Upload failed.");
+      setStatus("❌ Upload failed.");
     }
   };
 
@@ -48,6 +66,8 @@ export default function Home() {
       >
         Upload
       </button>
+
+      <p className="text-lg font-medium">{status}</p>
     </main>
   );
 }
